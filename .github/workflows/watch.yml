@@ -1,0 +1,20 @@
+name: watch
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # GitHub 사정으로 늦어질 수 있음
+  workflow_dispatch:
+concurrency:
+  group: watch
+  cancel-in-progress: false
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - run: python nol_alert.py
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          RUN_MINUTES: "4.5"
+          PYTHONUNBUFFERED: "1"
