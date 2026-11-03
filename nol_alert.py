@@ -56,8 +56,9 @@ def load_conf():
 
 
 def open_seats(data):
-    """잔여석이 있는 (등급, 개수) 목록."""
-    return [(s["seatGradeName"], s["remainCnt"]) for s in data.get("remainSeat", []) if s.get("remainCnt", 0) > 0]
+    """잔여석이 있는 (등급, 개수) 목록. 휠체어석은 제외."""
+    return [(s["seatGradeName"], s["remainCnt"]) for s in data.get("remainSeat", [])
+            if s.get("remainCnt", 0) > 0 and "휠체어" not in s.get("seatGradeName", "")]
 
 
 def send(conf, text):
@@ -101,6 +102,7 @@ if __name__ == "__main__":
     if "--selftest" in sys.argv:
         assert open_seats({"remainSeat": [{"seatGradeName": "A", "remainCnt": 0}]}) == []
         assert open_seats({"remainSeat": [{"seatGradeName": "A", "remainCnt": 2}]}) == [("A", 2)]
+        assert open_seats({"remainSeat": [{"seatGradeName": "1루 휠체어석", "remainCnt": 2}]}) == []
         print("selftest ok")
     else:
         main()
