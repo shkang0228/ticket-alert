@@ -8,10 +8,21 @@
 import json, os, random, sys, time, urllib.parse, urllib.request
 from pathlib import Path
 
-GOODS = "26015024"                 # 공연 상품 번호 (주소 끝 숫자)
-PLAY_SEQS = {"001": "1/14(목) 19:30", "002": "1/16(토) 19:00", "003": "1/17(일) 19:00"}
+# (상품 번호, 회차): 알림에 쓸 이름. 상품 번호는 상품 주소 끝 숫자
+TARGETS = {
+    ("26015024", "001"): "공연 1/14(목) 19:30",
+    ("26015024", "002"): "공연 1/16(토) 19:00",
+    ("26015024", "003"): "공연 1/17(일) 19:00",
+    ("26014447", "001"): "KS 1차전 11/3(화) 18:30 수원",
+    ("26014449", "001"): "KS 2차전 11/4(수) 18:30 수원",
+    ("26014451", "001"): "KS 3차전 11/6(금) 18:30 대구",
+    ("26014453", "001"): "KS 4차전 11/7(토) 14:00 대구",
+    ("26014455", "001"): "KS 5차전 11/8(일) 14:00 대구",
+    ("26014457", "001"): "KS 6차전 11/10(화) 18:30 수원",
+    ("26014459", "001"): "KS 7차전 11/11(수) 18:30 수원",
+}
 INTERVAL = 30                      # 초. 너무 줄이면 차단될 수 있음
-PAGE = f"https://nol.yanolja.com/ticket/products/{GOODS}"
+PAGE = "https://nol.yanolja.com/ticket/products/{}"
 API = "https://nol.yanolja.com/ticket/products/api/remaining-seats?goodsCode={}&playSeq={}"
 CONF = Path(__file__).with_name("config.json")  # {"token": "...", "chat_id": ""}
 UA = {"User-Agent": "Mozilla/5.0"}
@@ -62,13 +73,14 @@ def main():
     on_gh = bool(os.environ.get("GITHUB_ACTIONS"))
     end = time.time() + float(os.environ.get("RUN_MINUTES", "inf")) * 60
     if not on_gh:  # GitHub은 몇 분마다 새로 시작하므로 시작 알림 생략
-        send(conf, f"감시 시작: {PAGE}\n{INTERVAL}초 간격으로 확인해요.")
-    was_open = {seq: False for seq in PLAY_SEQS}
+        send(conf, f"감시 시작: {len(TARGETS)}개 회차를 {INTERVAL}초 간격으로 확인해요.")
+    was_open = {key: False for key in TARGETS}
     fails = 0
     while time.time() < end:
-        for seq, label in PLAY_SEQS.items():
+        for (goods, seq), label in TARGETS.items():
+            key = (goods, seq)
             try:
-                seats = open_seats(get_json(API.format(GOODS, seq)))
+                seats = open_seats(get_json(API.format(goods, seq)))
                 fails = 0
             except Exception as e:
                 fails += 1
@@ -76,12 +88,12 @@ def main():
                 if fails == 10:  # 감시가 멈춘 걸 모르고 기다리지 않도록
                     send(conf, f"조회가 계속 실패하고 있어요 (차단됐을 수 있음): {e}")
                 continue
-            if seats and not was_open[seq]:  # 매진→풀림 순간에만 알림
+            if seats and not was_open[key]:  # 매진→풀림 순간에만 알림
                 lines = "\n".join(f"- {g}: {n}석" for g, n in seats)
-                send(conf, f"🎫 자리 풀림!{' [GitHub]' if on_gh else ''} {label}\n{lines}\n{PAGE}")
-            was_open[seq] = bool(seats)
+                send(conf, f"🎫 자리 풀림!{' [GitHub]' if on_gh else ''} {label}\n{lines}\n{PAGE.format(goods)}")
+            was_open[key] = bool(seats)
             time.sleep(2)
-        print(time.strftime("%H:%M:%S"), "확인:", {PLAY_SEQS[s]: ("있음" if o else "매진") for s, o in was_open.items()})
+        print(time.strftime("%H:%M:%S"), "확인:", {TARGETS[k]: ("있음" if o else "매진") for k, o in was_open.items()})
         time.sleep(INTERVAL + random.uniform(0, 10))
 
 
