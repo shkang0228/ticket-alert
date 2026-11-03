@@ -23,6 +23,8 @@ TARGETS = {
 }
 INTERVAL = 30                      # 초. 너무 줄이면 차단될 수 있음
 PAGE = "https://nol.yanolja.com/ticket/products/{}"
+# 한국시리즈 상품 주소는 사이트가 목록으로 돌려보내므로 목록의 '경기 예매' 칸으로 바로 연결
+KS_PAGE = "https://nol.yanolja.com/ticket/genre/sports/postseason#GOODS_RESERVATION-492"
 API = "https://nol.yanolja.com/ticket/products/api/remaining-seats?goodsCode={}&playSeq={}"
 CONF = Path(__file__).with_name("config.json")  # {"token": "...", "chat_id": ""}
 UA = {"User-Agent": "Mozilla/5.0"}
@@ -91,7 +93,7 @@ def main():
                 continue
             if seats and not was_open[key]:  # 매진→풀림 순간에만 알림
                 lines = "\n".join(f"- {g}: {n}석" for g, n in seats)
-                send(conf, f"🎫 자리 풀림!{' [GitHub]' if on_gh else ''} {label}\n{lines}\n{PAGE.format(goods)}")
+                send(conf, f"🎫 자리 풀림!{' [GitHub]' if on_gh else ''} {label}\n{lines}\n{KS_PAGE if label.startswith('KS') else PAGE.format(goods)}")
             was_open[key] = bool(seats)
             time.sleep(2)
         print(time.strftime("%H:%M:%S"), "확인:", {TARGETS[k]: ("있음" if o else "매진") for k, o in was_open.items()})
