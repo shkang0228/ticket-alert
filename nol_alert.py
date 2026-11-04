@@ -13,17 +13,9 @@ TARGETS = {
     ("26015024", "001"): "공연 1/14(목) 19:30",
     ("26015024", "002"): "공연 1/16(토) 19:00",
     ("26015024", "003"): "공연 1/17(일) 19:00",
-    ("26014447", "001"): "KS 1차전 11/3(화) 18:30 수원",
-    ("26014449", "001"): "KS 2차전 11/4(수) 18:30 수원",
-    ("26014451", "001"): "KS 3차전 11/6(금) 18:30 대구",
-    ("26014453", "001"): "KS 4차전 11/7(토) 14:00 대구",
-    ("26014455", "001"): "KS 5차전 11/8(일) 14:00 대구",
-    ("26014459", "001"): "KS 7차전 11/11(수) 18:30 수원",
 }
 INTERVAL = 30                      # 초. 너무 줄이면 차단될 수 있음
 PAGE = "https://nol.yanolja.com/ticket/products/{}"
-# 한국시리즈 상품 주소는 사이트가 목록으로 돌려보내므로 목록의 '경기 예매' 칸으로 바로 연결
-KS_PAGE = "https://nol.yanolja.com/ticket/genre/sports/postseason#GOODS_RESERVATION-492"
 API = "https://nol.yanolja.com/ticket/products/api/remaining-seats?goodsCode={}&playSeq={}"
 CONF = Path(__file__).with_name("config.json")  # {"token": "...", "chat_id": ""}
 UA = {"User-Agent": "Mozilla/5.0"}
@@ -92,7 +84,7 @@ def main():
                 continue
             if seats and not was_open[key]:  # 매진→풀림 순간에만 알림
                 lines = "\n".join(f"- {g}: {n}석" for g, n in seats)
-                send(conf, f"🎫 자리 풀림!{' [GitHub]' if on_gh else ''} {label}\n{lines}\n{KS_PAGE if label.startswith('KS') else PAGE.format(goods)}")
+                send(conf, f"🎫 자리 풀림!{' [GitHub]' if on_gh else ''} {label}\n{lines}\n{PAGE.format(goods)}")
             was_open[key] = bool(seats)
             time.sleep(2)
         print(time.strftime("%H:%M:%S"), "확인:", {TARGETS[k]: ("있음" if o else "매진") for k, o in was_open.items()})
